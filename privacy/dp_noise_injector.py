@@ -111,7 +111,7 @@ def inject_laplace_noise(
             continue
 
         noisy_col = f"{col_name}_dp"
-        df = df.withColumn(noisy_col, noise_udf(F.col(col_name).cast(DoubleType())))
+        df = df.withColumn(noisy_col, noise_udf(F.col(col_name).cast("double")))
         logger.info(f"Noised: {col_name} → {noisy_col} (scale={scale:.4f})")
 
     df = df.withColumn("dp_epsilon", F.lit(budget.epsilon))

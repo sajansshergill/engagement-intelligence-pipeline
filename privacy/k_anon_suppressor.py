@@ -5,7 +5,6 @@ at write time before any downstream consumption.
 """
 
 import logging
-from typing import Optional
 
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql import functions as F
@@ -68,8 +67,14 @@ def suppress_aggregation_output(
     preserving cohort structure for auditing.
     """
     if "user_count" not in df.columns:
-        logger.warning("No 'user_count' column found — adding count before suppression")
-        df = df.withColumn("user_count", F.col(user_col))
+        if "distinct_users" in df.columns:
+            df = df.withColumnRenamed("distinct_users", "user_count")
+        else:
+            raise ValueError(
+                "suppress_aggregation_output requires a numeric 'user_count' or "
+                "'distinct_users' column (pre-aggregated cohort sizes). "
+                f"Got columns {list(df.columns)} (user_col={user_col!r} is not used as a substitute)."
+            )
 
     df = df.withColumn(
         agg_col,

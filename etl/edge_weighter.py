@@ -6,7 +6,7 @@ Output feeds downstream ranking and recommendation models.
 
 import logging
 import math
-from datetime import datetime
+from datetime import datetime, timezone
 
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql import functions as F
@@ -85,7 +85,7 @@ def apply_recency_decay(df: DataFrame, reference_time: datetime = None) -> DataF
     where lambda = ln(2) / half_life
     """
     if reference_time is None:
-        reference_time = datetime.utcnow()
+        reference_time = datetime.now(timezone.utc)
 
     ref_ts = reference_time.timestamp()
     decay_lambda = math.log(2) / DECAY_HALF_LIFE_DAYS

@@ -4,16 +4,10 @@ user token to build unified session timelines across FB, IG, Threads, and WA.
 """
 
 import logging
-from datetime import datetime
-from typing import Iterator
 
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql import functions as F
 from pyspark.sql import Window
-from pyspark.sql.types import (
-    StructType, StructField, StringType, TimestampType,
-    ArrayType, LongType, DoubleType
-)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

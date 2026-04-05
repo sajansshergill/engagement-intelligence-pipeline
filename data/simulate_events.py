@@ -3,10 +3,12 @@ Synthetic event generator — simulates 3B+ scale engagement events
 across all four Meta apps for local pipeline testing.
 """
 
+from __future__ import annotations
+
 import json
 import random
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from kafka import KafkaProducer
 
@@ -29,7 +31,7 @@ INVALID_RATE = 0.03
 
 
 def make_valid_event(app: str) -> dict:
-    base_time = datetime.utcnow() - timedelta(minutes=random.randint(0, 60))
+    base_time = datetime.now(timezone.utc) - timedelta(minutes=random.randint(0, 60))
     return {
         "user_token": f"tok_{uuid.uuid4().hex[:16]}",
         "event_type": random.choice(EVENT_TYPES[app]),
@@ -58,7 +60,15 @@ def make_invalid_event(app: str) -> dict:
     return event
 
 
-def simulate(n: int = 100_000, bootstrap_servers: str = "localhost:9092"):
+def simulate(
+    n: int = 100_000,
+    bootstrap_servers: str = "localhost:9092",
+    apps: list[str] | None = None,
+):
+    app_pool = apps if apps else APPS
+    if not app_pool:
+        raise ValueError("apps must be a non-empty list")
+
     producer = KafkaProducer(
         bootstrap_servers=[bootstrap_servers],
         value_serializer=lambda v: json.dumps(v).encode("utf-8"),
@@ -68,7 +78,7 @@ def simulate(n: int = 100_000, bootstrap_servers: str = "localhost:9092"):
     invalid_count = 0
 
     for i in range(n):
-        app = random.choice(APPS)
+        app = random.choice(app_pool)
         is_invalid = random.random() < INVALID_RATE
 
         event = make_invalid_event(app) if is_invalid else make_valid_event(app)
@@ -89,7 +99,29 @@ def simulate(n: int = 100_000, bootstrap_servers: str = "localhost:9092"):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--n", type=int, default=100_000, help="Number of events to generate")
+    parser.add_argument(
+        "--n",
+        type=int,
+        default=100_000,
+        help="Number of events to generate",
+    )
+    parser.add_argument(
+        "--scale",
+        type=int,
+        default=None,
+        help="Alias for --n (README / batch job compatibility)",
+    )
     parser.add_argument("--brokers", type=str, default="localhost:9092")
+    parser.add_argument(
+        "--apps",
+        type=str,
+        default="fb,ig,threads,wa",
+        help="Comma-separated apps to include (subset of fb,ig,threads,wa)",
+    )
     args = parser.parse_args()
-    simulate(n=args.n, bootstrap_servers=args.brokers)
+    n = args.scale if args.scale is not None else args.n
+    apps = [a.strip() for a in args.apps.split(",") if a.strip()]
+    invalid = [a for a in apps if a not in APPS]
+    if invalid:
+        raise SystemExit(f"Unknown app(s): {invalid}. Valid: {APPS}")
+    simulate(n=n, bootstrap_servers=args.brokers, apps=apps)

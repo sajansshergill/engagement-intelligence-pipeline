@@ -1,0 +1,3 @@
+# Install when running Airflow DAGs locally: pip install -r requirements-orchestration.txt
+-r requirements.txt
+apache-airflow>=2.8.0,<3

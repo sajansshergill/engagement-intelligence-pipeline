@@ -6,7 +6,7 @@ unrecoverable events to a persistent audit table (DuckDB for local dev).
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 import duckdb
@@ -32,7 +32,7 @@ def attempt_recovery(event: dict, reason: str) -> Optional[dict]:
     Returns the fixed event dict if successful, None otherwise.
     """
     if "Missing fields: {'session_id'}" in reason:
-        ts = event.get("timestamp", datetime.utcnow().isoformat())
+        ts = event.get("timestamp", datetime.now(timezone.utc).isoformat())
         event["session_id"] = f"recovered_{event.get('user_token', 'unknown')}_{ts}"
         event["_recovered"] = True
         event["_recovery_reason"] = "Generated fallback session_id"
@@ -82,7 +82,7 @@ class DeadLetterHandler:
     def _init_audit_table(self):
         self.db.execute("""
             CREATE TABLE IF NOT EXISTS dead_letter_audit (
-                id          INTEGER PRIMARY KEY,
+                id          BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
                 received_at TIMESTAMP,
                 app         VARCHAR,
                 user_token  VARCHAR,
@@ -99,7 +99,7 @@ class DeadLetterHandler:
                 (received_at, app, user_token, event_type, reason, recovered, raw_event)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, [
-            datetime.utcnow(),
+            datetime.now(timezone.utc),
             event.get("app"),
             event.get("user_token"),
             event.get("event_type"),

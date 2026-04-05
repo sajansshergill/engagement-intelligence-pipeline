@@ -1,0 +1,4 @@
+# Optional: local PyFlink validation job (ingestion/flink_stream_processor.py).
+# Prefer Python 3.11.x; PyFlink + apache-beam wheels may not support newest interpreters.
+-r requirements.txt
+apache-flink>=1.18.1

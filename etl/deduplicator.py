@@ -7,11 +7,10 @@ with a fallback deterministic hash for guaranteed correctness.
 import hashlib
 import logging
 import math
-from typing import Iterator
 
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql import functions as F
-from pyspark.sql.types import StringType, BooleanType
+from pyspark.sql.types import StringType
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -90,12 +89,6 @@ def dedup_with_window(df: DataFrame) -> DataFrame:
     """
     from pyspark.sql import Window
 
-    dedup_window = Window.partitionBy(
-        "event_fingerprint",
-        F.to_date("timestamp").alias("event_date")  # partition by day
-    ).orderBy("timestamp")
-
-    # Workaround: add date column first, then window over it
     df = df.withColumn("event_date", F.to_date("timestamp"))
 
     dedup_window = Window.partitionBy("event_fingerprint", "event_date").orderBy("timestamp")

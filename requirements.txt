@@ -1,0 +1,20 @@
+# Core pipeline (Java 17+ required for local PySpark; Python 3.11–3.13 recommended for Great Expectations)
+pyspark>=3.5.0
+kafka-python>=2.0.2
+numpy>=1.24.0
+pyarrow>=14.0.0
+duckdb>=1.0.0
+
+# Stream processing: use requirements-flink.txt on Python 3.11–3.12 (PyFlink is heavy).
+
+# Quality & testing
+great-expectations>=0.18.0
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Dashboard
+streamlit>=1.28.0
+pandas>=2.0.0
+
+# AI assist (optional; modules stub when key unset)
+anthropic>=0.25.0

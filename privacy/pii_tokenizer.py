@@ -7,9 +7,8 @@ import hashlib
 import hmac
 import logging
 import os
-import time
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from pyspark.sql import SparkSession, DataFrame
@@ -34,9 +33,11 @@ class TokenEpoch:
 
     @staticmethod
     def current() -> "TokenEpoch":
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         epoch_id = int(now.timestamp() // (TOKEN_ROTATION_DAYS * 86400))
-        start = datetime.utcfromtimestamp(epoch_id * TOKEN_ROTATION_DAYS * 86400)
+        start = datetime.fromtimestamp(
+            epoch_id * TOKEN_ROTATION_DAYS * 86400, tz=timezone.utc
+        )
         end = start + timedelta(days=TOKEN_ROTATION_DAYS)
         return TokenEpoch(epoch_id=epoch_id, start_date=start, end_date=end)
 
